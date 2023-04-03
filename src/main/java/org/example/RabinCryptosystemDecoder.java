@@ -28,6 +28,7 @@ public class RabinCryptosystemDecoder implements Decoder {
     @Override
     public byte[] decode(BigInteger[] cipher) {
         BigInteger[] result = new BigInteger[cipher.length];
+        int lenSum = 0;
         for (int i = 0; i < cipher.length; i++) {
             BigInteger d = b.pow(2).add(cipher[i].multiply(FOUR)).mod(n);
             BigInteger mp = d.modPow(p.add(ONE).divide(FOUR), p);
@@ -51,16 +52,20 @@ public class RabinCryptosystemDecoder implements Decoder {
             }
 
             result[i] = Arrays.stream(ds).min(BigInteger::compareTo).get();
+            lenSum += result[i].toByteArray().length;
+            System.out.println(Arrays.toString(result[i].toByteArray()));
         }
-
-        System.out.println(Arrays.toString(result));
         byte[][] bytes = new byte[result.length][];
         int len = 0;
         for (int i = 0; i < result.length; i++) {
-            bytes[i] = result[i].toByteArray();
+            byte[] byteArr = result[i].toByteArray();
+            System.out.println(Arrays.toString(byteArr));
+            bytes[i] = new byte[byteArr.length - 1];
+            System.arraycopy(byteArr, 1, bytes[i], 0, bytes[i].length);
             len += bytes[i].length;
         }
         byte[] resultBytes = new byte[len];
+        System.out.println(len);
         int current = 0;
         for (int i = 0; i < bytes.length; i++) {
             for (int j = 0; j < bytes[i].length; j++) {

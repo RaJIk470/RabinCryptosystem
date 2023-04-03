@@ -177,7 +177,8 @@ public class EncodingForm extends JFrame {
                 BigInteger b = keyIn.nextBigInteger();
 
                 Encoder encoder = new RabinCryptosystemEncoder(n, b);
-                BigInteger[] cipher = encoder.encode(fileInputStream.readAllBytes());
+                byte[] bytes = fileInputStream.readAllBytes();
+                BigInteger[] cipher = encoder.encode(bytes);
                 StringBuilder resultSb = new StringBuilder();
                 for (int i = 0; i < cipher.length; i++) {
                     if (i != cipher.length - 1)
@@ -220,7 +221,7 @@ public class EncodingForm extends JFrame {
                 Decoder decoder = new RabinCryptosystemDecoder(p, q, b);
                 ArrayList<BigInteger> cipher = new ArrayList<>();
                 while (fileIn.hasNextBigInteger()) {
-                    cipher.add(fileIn.nextBigInteger());
+                    cipher.add(new BigInteger(1, fileIn.nextBigInteger().toByteArray()));
                 }
 
                 byte[] result = decoder.decode(cipher.toArray(new BigInteger[]{}));
