@@ -1,6 +1,7 @@
 package org.example;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.PrimitiveIterator;
 
 public class RabinCryptosystemEncoder implements Encoder {
@@ -14,12 +15,21 @@ public class RabinCryptosystemEncoder implements Encoder {
 
     @Override
     public BigInteger[] encode(byte[] bytes) {
-        int pieceSize = n.bitLength() / 8 - 1;
+        System.out.println(n + " " + n.bitLength());
+        byte[] defineBytes = RabinNumbersGenerator.getDefineBytes();
+        int pieceSize = n.bitLength() / 8 - defineBytes.length;
+        if (pieceSize < 1) throw new RuntimeException("Smol key");
         if (pieceSize <= 0) pieceSize = 1;
         BigInteger[] cipher = new BigInteger[(bytes.length + pieceSize - 1) / pieceSize];
         for (int i = 0; i < cipher.length; i++) {
             int len = (i + 1) * pieceSize > bytes.length ? bytes.length % pieceSize : pieceSize;
-            cipher[i] = new BigInteger(bytes, i * pieceSize, len);
+            byte[] bs = new byte[len];
+            for (int j = 0; j < len; j++) {
+                bs[j] = bytes[i * pieceSize + j];
+            }
+            cipher[i] = new BigInteger(1, RabinNumbersGenerator.addDefineBytes(bs));
+            //cipher[i] = new BigInteger(1, bytes, i * pieceSize, len);
+            System.out.println(Arrays.toString(cipher[i].toByteArray()));
             cipher[i] = cipher[i].multiply(cipher[i].add(b)).mod(n);
         }
 

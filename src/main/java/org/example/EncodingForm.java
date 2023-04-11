@@ -27,6 +27,12 @@ public class EncodingForm extends JFrame {
     private JTextField keyFileField;
     private JTextField keyOutputDirectoryField;
     private JTextArea resultArea;
+    private JTextField nField;
+    private JTextField qField;
+    private JTextField pField;
+    private JTextField bField;
+    private JRadioButton file;
+    private JRadioButton fields;
 
 
     public EncodingForm() {
@@ -58,7 +64,6 @@ public class EncodingForm extends JFrame {
                 }
             }
         });
-
 
 
         JPanel generateKeyField = new JPanel();
@@ -114,8 +119,8 @@ public class EncodingForm extends JFrame {
                 printWriter.println(b);
                 printWriter.close();
             } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Cannot create file here", "ERROR", JOptionPane.ERROR_MESSAGE);
-        }
+                JOptionPane.showMessageDialog(this, "Cannot create file here", "ERROR", JOptionPane.ERROR_MESSAGE);
+            }
 
         });
 
@@ -147,6 +152,51 @@ public class EncodingForm extends JFrame {
         filePanel.add(fileButton);
         mainPanel.add(filePanel);
 
+        JPanel npqbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel nLabel = new JLabel("n: ");
+        nLabel.setFont(font);
+        nField = new JTextField(15);
+        nField.setFont(font);
+        npqbPanel.add(nLabel);
+        npqbPanel.add(nField);
+
+        JLabel pLabel = new JLabel("p: ");
+        pLabel.setFont(font);
+        pField = new JTextField(15);
+        pField.setFont(font);
+        npqbPanel.add(pLabel);
+        npqbPanel.add(pField);
+
+        JLabel qLabel = new JLabel("q: ");
+        qLabel.setFont(font);
+        qField = new JTextField(15);
+        qField.setFont(font);
+        npqbPanel.add(qLabel);
+        npqbPanel.add(qField);
+
+        JLabel bLabel = new JLabel("b: ");
+        bLabel.setFont(font);
+        bField = new JTextField(15);
+        bField.setFont(font);
+        npqbPanel.add(bLabel);
+        npqbPanel.add(bField);
+
+        mainPanel.add(npqbPanel);
+
+        JPanel rbPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        ButtonGroup buttonGroup = new ButtonGroup();
+        file = new JRadioButton("from file");
+        file.setFont(font);
+        fields = new JRadioButton("from fields");
+        fields.setFont(font);
+        buttonGroup.add(file);
+        buttonGroup.add(fields);
+        rbPanel.add(file);
+        rbPanel.add(fields);
+        mainPanel.add(rbPanel);
+        fields.setSelected(true);
+
+
         JPanel resultPanel = new JPanel();
         JLabel resultLabel = new JLabel("result:   ");
         resultLabel.setFont(font);
@@ -166,32 +216,50 @@ public class EncodingForm extends JFrame {
         ActionListener encodeActionListener = (event) -> {
             File file = new File(fileField.getText());
             File resultFile = new File(file.getParentFile() + "/" + file.getName() + "_result");
-            try (FileInputStream fileInputStream = new FileInputStream(file);
-                 FileInputStream keyFileInputStream = new FileInputStream(keyOutputDirectoryField.getText())) {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                BigInteger n;
+                BigInteger b;
+                if (this.file.isSelected()) {
+                    FileInputStream keyFileInputStream = new FileInputStream(keyOutputDirectoryField.getText());
+                    Scanner keyIn = new Scanner(keyFileInputStream);
+                    n = keyIn.nextBigInteger();
+                    b = keyIn.nextBigInteger();
+                } else {
+                    n = new BigInteger(nField.getText());
+                    b = new BigInteger(bField.getText());
+                }
+
+                if (b.compareTo(n) >= 0) {
+                    JOptionPane.showMessageDialog(this, "b is greater or equals n", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 resultFile.createNewFile();
                 FileOutputStream fileOutputStream = new FileOutputStream(resultFile);
 
-                Scanner keyIn = new Scanner(keyFileInputStream);
-                BigInteger n = keyIn.nextBigInteger();
-                BigInteger b = keyIn.nextBigInteger();
 
-                Encoder encoder = new RabinCryptosystemEncoder(n, b);
-                BigInteger[] cipher = encoder.encode(fileInputStream.readAllBytes());
-                StringBuilder resultSb = new StringBuilder();
-                for (int i = 0; i < cipher.length; i++) {
-                    if (i != cipher.length - 1)
-                        resultSb.append(cipher[i] + " ");
-                    else
-                        resultSb.append(cipher[i]);
+                System.out.println(n + " " + b);
+
+                try {
+                    Encoder encoder = new RabinCryptosystemEncoder(n, b);
+                    BigInteger[] cipher = encoder.encode(fileInputStream.readAllBytes());
+                    StringBuilder resultSb = new StringBuilder();
+                    for (int i = 0; i < cipher.length; i++) {
+                        if (i != cipher.length - 1)
+                            resultSb.append(cipher[i] + " ");
+                        else
+                            resultSb.append(cipher[i]);
+                    }
+
+                    String result = resultSb.toString();
+                    PrintWriter printWriter = new PrintWriter(fileOutputStream);
+                    printWriter.print(result);
+                    printWriter.close();
+
+                    setTextWithLineBreaks(resultArea, result, 50);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
                 }
-
-                String result = resultSb.toString();
-                PrintWriter printWriter = new PrintWriter(fileOutputStream);
-                printWriter.print(result);
-                printWriter.close();
-
-                setTextWithLineBreaks(resultArea, result, 50);
             } catch (FileNotFoundException e) {
                 JOptionPane.showMessageDialog(this, "File not found", "ERROR", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
@@ -205,29 +273,62 @@ public class EncodingForm extends JFrame {
 
         ActionListener decodeActionListener = (event) -> {
             File file = new File(fileField.getText());
-                try (FileInputStream fileInputStream = new FileInputStream(file);
-                     FileInputStream keyFileInputStream = new FileInputStream(keyOutputDirectoryField.getText())) {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
                 File resultFile = new File(file.getParentFile() + "/" + file.getName() + "_result");
                 resultFile.createNewFile();
                 FileOutputStream fileOutputStream = new FileOutputStream(resultFile);
 
-                Scanner keyIn = new Scanner(keyFileInputStream);
-                BigInteger p = keyIn.nextBigInteger();
-                BigInteger q = keyIn.nextBigInteger();
-                BigInteger b = keyIn.nextBigInteger();
-
-                Scanner fileIn = new Scanner(fileInputStream);
-                Decoder decoder = new RabinCryptosystemDecoder(p, q, b);
-                ArrayList<BigInteger> cipher = new ArrayList<>();
-                while (fileIn.hasNextBigInteger()) {
-                    cipher.add(fileIn.nextBigInteger());
+                BigInteger p;
+                BigInteger q;
+                BigInteger b;
+                if (this.file.isSelected()) {
+                    FileInputStream keyFileInputStream = new FileInputStream(keyOutputDirectoryField.getText());
+                    Scanner keyIn = new Scanner(keyFileInputStream);
+                    p = keyIn.nextBigInteger();
+                    q = keyIn.nextBigInteger();
+                    b = keyIn.nextBigInteger();
+                } else {
+                    p = new BigInteger(pField.getText());
+                    q = new BigInteger(qField.getText());
+                    b = new BigInteger(bField.getText());
                 }
 
-                byte[] result = decoder.decode(cipher.toArray(new BigInteger[]{}));
-                fileOutputStream.write(result);
-                String strResult = new String(result);
+                if (b.compareTo(p.multiply(q)) >= 0) {
+                    JOptionPane.showMessageDialog(this, "b is greater or equals p*q", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (!q.isProbablePrime(16) && !q.isProbablePrime(16)) {
+                    JOptionPane.showMessageDialog(this, "p and q must be primes", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (!q.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
+                    JOptionPane.showMessageDialog(this, "q mod 4 must equals 3", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (!p.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
+                    JOptionPane.showMessageDialog(this, "p mod 4 must equals 3", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
-                setTextWithLineBreaks(resultArea, strResult, 80);
+
+                System.out.println(p + " " + q + " " + b);
+
+                Scanner fileIn = new Scanner(fileInputStream);
+                try {
+                    Decoder decoder = new RabinCryptosystemDecoder(p, q, b);
+                    ArrayList<BigInteger> cipher = new ArrayList<>();
+                    while (fileIn.hasNextBigInteger()) {
+                        cipher.add(new BigInteger(1, fileIn.nextBigInteger().toByteArray()));
+                    }
+
+                    byte[] result = decoder.decode(cipher.toArray(new BigInteger[]{}));
+                    fileOutputStream.write(result);
+                    String strResult = new String(result);
+
+                    setTextWithLineBreaks(resultArea, strResult, 80);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
+                }
             } catch (FileNotFoundException e) {
                 JOptionPane.showMessageDialog(this, "File not found", "ERROR", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
