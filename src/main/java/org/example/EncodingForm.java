@@ -298,15 +298,15 @@ public class EncodingForm extends JFrame {
                     return;
                 }
                 if (!q.isProbablePrime(16) && !q.isProbablePrime(16)) {
-                    JOptionPane.showMessageDialog(this, "p and q must be primes", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "p and q must be prime numbers", "ERROR", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 if (!q.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                    JOptionPane.showMessageDialog(this, "q mod 4 must equals 3", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "q mod 4 must equal 3", "ERROR", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 if (!p.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                    JOptionPane.showMessageDialog(this, "p mod 4 must equals 3", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "p mod 4 must equal 3", "ERROR", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
